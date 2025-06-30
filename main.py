@@ -5,7 +5,13 @@ from config import get_settings
 from database import init_db
 from middlewares.auth_middleware import AuthMiddleware
 from middlewares.session_middleware import SessionMiddleware
-from handlers import start_router, channel_router, gamification_router, missions_router, gifts_router
+from handlers import (
+    start_router,
+    channel_router,
+    gamification_router,
+    missions_router,
+    gifts_router,
+)
 settings = get_settings()
 
 bot = Bot(token=settings.BOT_TOKEN)
