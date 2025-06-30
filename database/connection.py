@@ -1,16 +1,7 @@
-from sqlalchemy.orm import Session
-from .models import Base
-from config import engine
+import aiosqlite
+from config import DATABASE_URL
 
+_db_path = DATABASE_URL.replace('sqlite:///', '')
 
-def init_db():
-    Base.metadata.create_all(bind=engine)
-
-
-def get_db() -> Session:
-    from config import SessionLocal
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db():
+    return await aiosqlite.connect(_db_path)

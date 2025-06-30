@@ -1,36 +1,37 @@
 import asyncio
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, F
+from aiogram.filters import Command
+from aiogram.types import Message
+from loguru import logger
 
-from config import get_settings
-from database import init_db
-from middlewares.auth_middleware import AuthMiddleware
-from middlewares.session_middleware import SessionMiddleware
-from handlers import (
-    start_router,
-    channel_router,
-    gamification_router,
-    missions_router,
-    gifts_router,
-)
-settings = get_settings()
+from config import Settings
+from database import create_tables
+from middlewares import AuthMiddleware, SessionMiddleware
 
-bot = Bot(token=settings.BOT_TOKEN)
+settings = Settings()
+
+bot = Bot(settings.bot_token)
 dp = Dispatcher()
 
-# Middlewares (en Aiogram 3.x se agregan así)
-dp.update.middleware(AuthMiddleware())
-dp.update.middleware(SessionMiddleware())
+dp.message.middleware(AuthMiddleware())
+dp.message.middleware(SessionMiddleware())
 
-# Routers
-dp.include_router(start_router)
-dp.include_router(gamification_router)
-dp.include_router(missions_router)
-dp.include_router(gifts_router)
-dp.include_router(channel_router)
+@dp.message(Command('start'))
+async def cmd_start(message: Message):
+    text = (
+        "\U0001F389 \u00a1Bienvenido, Aventurero!\n\n"
+        "\u00a1Has comenzado tu \u00e9pica aventura! Aqu\u00ed podr\u00e1s ganar besitos \u2764\ufe0f\n\n"
+        "\u2728 Estado: Nuevo aventurero\n"
+        "\ud83c\udf81 Regalo inicial: 100 besitos\n\n"
+        "\ud83c\udfe0 Usa el men\u00fa para comenzar tu aventura"
+    )
+    await message.answer(text)
 
 async def main():
-    init_db()
+    logger.remove()
+    logger.add(lambda msg: print(msg, end=""), level=settings.log_level)
+    await create_tables()
     await dp.start_polling(bot)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

@@ -1,15 +1,4 @@
-from dataclasses import dataclass, field
-from typing import Any, Dict
+from .auth_middleware import AuthMiddleware
+from .session_middleware import SessionMiddleware
 
-@dataclass
-class UserContext:
-    user_id: int
-    telegram_id: int
-    username: str
-    is_admin: bool
-    is_vip: bool
-    besitos: int
-    level: int
-    session_data: Dict[str, Any] = field(default_factory=dict)
-
-__all__ = ['UserContext']
+__all__ = ["AuthMiddleware", "SessionMiddleware"]

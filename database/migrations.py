@@ -1,5 +1,4 @@
-from .connection import init_db
+from .models import create_tables
 
-
-def run_migrations():
-    init_db()
+async def run_migrations():
+    await create_tables()

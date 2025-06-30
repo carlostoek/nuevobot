@@ -1,4 +1,4 @@
-from .settings import get_settings
-from .database_config import SessionLocal, engine
+from .settings import Settings
+from .database_config import DATABASE_URL
 
-__all__ = ["get_settings", "SessionLocal", "engine"]
+__all__ = ["Settings", "DATABASE_URL"]
