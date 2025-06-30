@@ -1,5 +1,5 @@
+import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.utils import executor
 
 from config import get_settings
 from database import init_db
@@ -10,14 +10,19 @@ from handlers import start_router, channel_router
 settings = get_settings()
 
 bot = Bot(token=settings.BOT_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher()
 
-dp.middleware.setup(AuthMiddleware())
-dp.middleware.setup(SessionMiddleware())
+# Middlewares (en Aiogram 3.x se agregan así)
+dp.update.middleware(AuthMiddleware())
+dp.update.middleware(SessionMiddleware())
 
+# Routers
 dp.include_router(start_router)
 dp.include_router(channel_router)
 
-if __name__ == '__main__':
+async def main():
     init_db()
-    executor.start_polling(dp, skip_updates=True)
+    await dp.start_polling(bot)
+
+if __name__ == '__main__':
+    asyncio.run(main())
