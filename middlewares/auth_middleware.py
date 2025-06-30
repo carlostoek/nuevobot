@@ -1,0 +1,36 @@
+from aiogram.dispatcher.middlewares import BaseMiddleware
+from aiogram.types import TelegramObject
+from typing import Callable, Awaitable, Dict, Any
+from database import get_db, User
+from sqlalchemy.orm import Session
+from config import get_settings
+from . import UserContext
+
+settings = get_settings()
+
+class AuthMiddleware(BaseMiddleware):
+    async def on_pre_process_update(self, update: TelegramObject, data: Dict[str, Any]):
+        if not update.message:
+            return
+        telegram_id = update.message.from_user.id
+        username = update.message.from_user.username or ""
+        first_name = update.message.from_user.first_name or ""
+        with next(get_db()) as db:
+            user = db.query(User).filter_by(telegram_id=telegram_id).first()
+            if not user:
+                user = User(telegram_id=telegram_id, username=username, first_name=first_name)
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+            is_admin = telegram_id in settings.ADMIN_IDS
+            context = UserContext(
+                user_id=user.id,
+                telegram_id=telegram_id,
+                username=username,
+                is_admin=is_admin,
+                is_vip=user.vip_status,
+                besitos=user.besitos,
+                level=user.level,
+                session_data={}
+            )
+            data['user_context'] = context
