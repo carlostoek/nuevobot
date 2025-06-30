@@ -32,3 +32,47 @@ class UserChannel(Base):
     channel_id = Column(Integer, ForeignKey('channels.id'))
     user = relationship('User', back_populates='channels')
     channel = relationship('Channel', back_populates='users')
+
+class Mission(Base):
+    __tablename__ = 'missions'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    description = Column(String)
+    reward_besitos = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime)
+    user_missions = relationship('UserMission', back_populates='mission')
+
+class UserMission(Base):
+    __tablename__ = 'user_missions'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    mission_id = Column(Integer, ForeignKey('missions.id'))
+    progress = Column(Integer, default=0)
+    completed = Column(Boolean, default=False)
+    assigned_at = Column(DateTime, default=datetime.utcnow)
+    user = relationship('User')
+    mission = relationship('Mission', back_populates='user_missions')
+
+class UserAchievement(Base):
+    __tablename__ = 'user_achievements'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    name = Column(String)
+    achieved_at = Column(DateTime, default=datetime.utcnow)
+    user = relationship('User')
+
+class LorePiece(Base):
+    __tablename__ = 'lore_pieces'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+    description = Column(String)
+
+class UserLorePiece(Base):
+    __tablename__ = 'user_lore_pieces'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    lore_piece_id = Column(Integer, ForeignKey('lore_pieces.id'))
+    acquired_at = Column(DateTime, default=datetime.utcnow)
+    user = relationship('User')
+    lore_piece = relationship('LorePiece')
