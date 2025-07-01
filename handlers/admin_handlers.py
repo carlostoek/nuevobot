@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 
 from services.notification_service import NotificationService
 from middlewares.admin_middleware import AdminMiddleware
-from keyboards import admin_keyboard, back_keyboard
+from bot.keyboards.keyboards import admin_keyboard, back_keyboard
 
 router = Router()
 router.message.middleware(AdminMiddleware())
