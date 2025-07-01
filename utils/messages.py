@@ -1,93 +1,172 @@
+# utils/keyboards.py - EXTENSIONES NARRATIVA Y MINIJUEGOS
+
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from typing import List
+
+# === TECLADOS DE NARRATIVA ===
+
+def get_backpack_keyboard(lore_pieces: List, can_combine: bool = False) -> InlineKeyboardMarkup:
+    """Teclado de mochila narrativa"""
+    buttons = []
+    
+    # Lore pieces (máximo 6 por página)
+    for i, lore in enumerate(lore_pieces[:6]):
+        rarity_emoji = {"COMMON": "⚪", "UNCOMMON": "🟢", "RARE": "🔵", "EPIC": "🟣", "LEGENDARY": "🟡"}
+        emoji = rarity_emoji.get(lore.rarity.value, "⚪")
+        buttons.append([InlineKeyboardButton(
+            text=f"{emoji} {lore.title}", 
+            callback_data=f"view_lore_{lore.id}"
+        )])
+    
+    # Opciones adicionales
+    if can_combine:
+        buttons.append([InlineKeyboardButton(text="🗝️ Combinar Lore", callback_data="combine_lore")])
+    
+    buttons.append([InlineKeyboardButton(text="🔙 Volver", callback_data="back_to_main")])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_lore_detail_keyboard(lore_id: int) -> InlineKeyboardMarkup:
+    """Teclado de detalles de lore"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔙 Volver a Mochila", callback_data="back_to_backpack")]
+    ])
+
+def get_combination_keyboard(lore_pieces: List, selected: List[int]) -> InlineKeyboardMarkup:
+    """Teclado de combinación de lore"""
+    buttons = []
+    
+    for lore in lore_pieces:
+        emoji = "✅" if lore.id in selected else "⚪"
+        buttons.append([InlineKeyboardButton(
+            text=f"{emoji} {lore.title}",
+            callback_data=f"toggle_lore_{lore.id}"
+        )])
+    
+    # Controles
+    controls = []
+    if len(selected) >= 2:
+        controls.append(InlineKeyboardButton(text="🗝️ Intentar Combinación", callback_data="attempt_combination"))
+    
+    controls.append(InlineKeyboardButton(text="🔙 Cancelar", callback_data="back_to_backpack"))
+    buttons.append(controls)
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+# === TECLADOS DE MINIJUEGOS ===
+
+def get_minigames_menu_keyboard() -> InlineKeyboardMarkup:
+    """Menú principal de minijuegos"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🧠 Trivia", callback_data="start_trivia")],
+        [InlineKeyboardButton(text="📊 Mis Estadísticas", callback_data="view_stats")],
+        [InlineKeyboardButton(text="🏆 Ranking", callback_data="view_ranking")],
+        [InlineKeyboardButton(text="🔙 Volver", callback_data="back_to_main")]
+    ])
+
+def get_trivia_options_keyboard(options: List[str], question_id: int) -> InlineKeyboardMarkup:
+    """Teclado de opciones de trivia"""
+    buttons = []
+    
+    for i, option in enumerate(options):
+        buttons.append([InlineKeyboardButton(
+            text=f"{chr(65+i)}. {option}",
+            callback_data=f"trivia_answer_{i}"
+        )])
+    
+    buttons.append([InlineKeyboardButton(text="🚪 Abandonar", callback_data="quit_game")])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_stats_keyboard() -> InlineKeyboardMarkup:
+    """Teclado de estadísticas"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔙 Volver a Juegos", callback_data="back_to_minigames")]
+    ])
+
+# ===== utils/messages.py - EXTENSIONES =====
+
+from services.narrative_service import LorePiece, CombinationResult
+from services.minigame_service import TriviaQuestion, GameResult
+from typing import Dict
+
+# === MENSAJES DE NARRATIVA ===
+
+def format_lore_piece(lore: LorePiece) -> str:
+    """Formatea un lore piece para mostrar"""
+    rarity_emojis = {
+        "COMMON": "⚪ Común",
+        "UNCOMMON": "🟢 Poco Común", 
+        "RARE": "🔵 Raro",
+        "EPIC": "🟣 Épico",
+        "LEGENDARY": "🟡 Legendario"
+    }
+    
+    return f"""📖 Lore Desbloqueado
+
+🗝️ {lore.title}
+
+{lore.content}
+
+⭐ Rareza: {rarity_emojis.get(lore.rarity.value, lore.rarity.value)}
+🏷️ Categoría: {lore.category.title()}"""
+
+def format_combination_result(result: CombinationResult) -> str:
+    """Formatea resultado de combinación"""
+    if result.success:
+        return f"""🗝️ ¡Combinación Exitosa!
+
+✨ {result.message}
+
+🎁 Has desbloqueado nuevo lore"""
+    else:
+        return f"""❌ Combinación Fallida
+
+{result.message}
+
+💡 Prueba otras combinaciones"""
+
+# === MENSAJES DE MINIJUEGOS ===
+
+def format_trivia_question(question: TriviaQuestion) -> str:
+    """Formatea pregunta de trivia"""
+    return f"""❓ {question.question}
+
+🏷️ Categoría: {question.category.title()}
+💎 Puntos: {question.points}"""
+
+def format_game_result(result: GameResult) -> str:
+    """Formatea resultado del juego"""
+    accuracy = (result.correct_answers / result.total_questions) * 100
+    
+    return f"""🏆 Resultado Final
+
+🎯 Puntuación: {result.score}
+✅ Correctas: {result.correct_answers}/{result.total_questions}
+📊 Precisión: {accuracy:.1f}%
+⏱️ Tiempo: {result.time_taken:.1f}s
+🏅 Rango: {result.rank}
+
+💎 Puntos ganados: {result.points_earned}"""
+
+def format_user_stats(stats: Dict, username: str) -> str:
+    """Formatea estadísticas del usuario"""
+    if not stats:
+        return f"""📊 Estadísticas de {username}
+
+¡Aún no has jugado ningún minijuego!
+
+🎲 ¿Quieres empezar tu primera partida?"""
+    
+    text = f"📊 Estadísticas de {username}\n\n"
+    
+    for game_type, data in stats.items():
+        text += f"""🎮 {game_type.title()}:
+   🕹️ Partidas: {data['games_played']}
+   📈 Promedio: {data['avg_score']}
+   🏆 Mejor: {data['best_score']}
+   💎 Puntos: {data['total_points']}
+
 """
-Plantillas de mensajes - Fase 2
-Mensajes personalizados y de error
-"""
-from typing import Dict, Any, List
-
-class Messages:
     
-    @staticmethod
-    def welcome_message(user_data: Dict[str, Any]) -> str:
-        """Mensaje de bienvenida personalizado"""
-        first_name = user_data.get('first_name', 'Aventurero')
-        besitos = user_data.get('besitos', 0)
-        level = user_data.get('level', 1)
-        
-        return f"""🎉 ¡Bienvenido de vuelta, {first_name}!
-
-🏆 Tu perfil ha sido restaurado con éxito.
-💖 Saldo actual: {besitos} besitos.
-⭐ Nivel: {level}
-
-📺 Explora los canales disponibles y gana más besitos."""
-    
-    @staticmethod
-    def new_user_welcome(user_data: Dict[str, Any]) -> str:
-        """Mensaje de bienvenida para nuevos usuarios"""
-        first_name = user_data.get('first_name', 'Aventurero')
-        besitos = user_data.get('besitos', 100)
-        
-        return f"""🎊 ¡Bienvenido al Bot, {first_name}!
-
-🎁 Has recibido {besitos} besitos de bienvenida.
-⭐ Comenzaste en el nivel 1.
-
-📺 Únete a los canales disponibles para ganar más besitos.
-🏆 ¡Completa tu perfil y comienza tu aventura!"""
-    
-    @staticmethod
-    def profile_info(user_data: Dict[str, Any]) -> str:
-        """Información del perfil del usuario"""
-        username = user_data.get('username', 'Sin username')
-        first_name = user_data.get('first_name', 'Sin nombre')
-        besitos = user_data.get('besitos', 0)
-        level = user_data.get('level', 1)
-        is_vip = user_data.get('is_vip', False)
-        is_admin = user_data.get('is_admin', False)
-        
-        vip_status = "👑 VIP Activo" if is_vip else "🆓 Usuario Regular"
-        admin_badge = "\n⚙️ **ADMINISTRADOR**" if is_admin else ""
-        
-        return f"""🏆 **Tu Perfil**
-
-👤 **Nombre:** {first_name}
-🏷️ **Username:** @{username}
-💖 **Besitos:** {besitos}
-⭐ **Nivel:** {level}
-🎯 **Estado:** {vip_status}{admin_badge}
-
-💡 **Tip:** Únete a más canales para ganar besitos extra."""
-    
-    @staticmethod
-    def channels_list_header(channels: List[Dict[str, Any]]) -> str:
-        """Cabecera de la lista de canales"""
-        total_channels = len(channels)
-        vip_channels = sum(1 for c in channels if c.get('is_vip'))
-        free_channels = total_channels - vip_channels
-        
-        return f"""📺 **Lista de Canales Disponibles**
-
-🆓 Canales gratuitos: {free_channels}
-👑 Canales VIP: {vip_channels}
-
-💡 Únete para ganar besitos por cada canal."""
-    
-    @staticmethod
-    def error_channel_not_found() -> str:
-        """Error cuando no se encuentra un canal"""
-        return "❌ Canal no encontrado o no disponible."
-    
-    @staticmethod
-    def error_vip_required() -> str:
-        """Error cuando se requiere VIP"""
-        return "👑 Este canal requiere acceso VIP. ¡Hazte VIP para acceder!"
-    
-    @staticmethod
-    def success_channel_joined(channel_name: str, reward: int) -> str:
-        """Éxito al unirse a un canal"""
-        return f"""✅ **¡Te has unido exitosamente!**
-
-📺 Canal: {channel_name}
-🎁 Recompensa: +{reward} besitos
-
-¡Gracias por unirte a nuestra comunidad!"""
+    return text
