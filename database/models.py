@@ -1,49 +1,36 @@
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from database.base import Base
 
-@dataclass
-class User:
-    """Modelo del usuario del bot"""
-    telegram_id: int
-    username: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    besitos: int = 100
-    nivel: int = 1
-    experiencia: int = 0
-    last_daily_reward: Optional[datetime] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    is_active: bool = True
-    
-    def __post_init__(self):
-        if self.created_at is None:
-            self.created_at = datetime.now()
-        self.updated_at = datetime.now()
+class Auction(Base):
+    __tablename__ = 'auctions'
+    id = Column(Integer, primary_key=True)
+    item_name = Column(String, nullable=False)
+    current_bid = Column(Integer, default=0)
+    end_time = Column(DateTime, nullable=False)
 
-@dataclass
-class Channel:
-    """Modelo del canal"""
-    channel_id: int
-    channel_name: str
-    channel_username: Optional[str] = None
-    description: Optional[str] = None
-    is_active: bool = True
-    created_at: Optional[datetime] = None
-    
-    def __post_init__(self):
-        if self.created_at is None:
-            self.created_at = datetime.now()
+class AuctionBid(Base):
+    __tablename__ = 'auction_bids'
+    id = Column(Integer, primary_key=True)
+    auction_id = Column(Integer, ForeignKey('auctions.id'))
+    user_id = Column(Integer, ForeignKey('users.id'))
+    bid_amount = Column(Integer, nullable=False)
+    bid_time = Column(DateTime, nullable=False)
 
-@dataclass
-class UserChannel:
-    """Relación muchos a muchos entre usuarios y canales"""
-    user_telegram_id: int
-    channel_id: int
-    joined_at: Optional[datetime] = None
-    is_member: bool = True
-    
-    def __post_init__(self):
-        if self.joined_at is None:
-            self.joined_at = datetime.now()
+class VIPToken(Base):
+    __tablename__ = 'vip_tokens'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    token = Column(String, unique=True, nullable=False)
+    expiry_date = Column(DateTime, nullable=False)
+
+class VIPContent(Base):
+    __tablename__ = 'vip_content'
+    id = Column(Integer, primary_key=True)
+    content_type = Column(String, nullable=False)
+    content_data = Column(Text, nullable=False)
+
+class ExclusiveChannel(Base):
+    __tablename__ = 'exclusive_channels'
+    id = Column(Integer, primary_key=True)
+    channel_id = Column(String, unique=True, nullable=False)
+    description = Column(String)
